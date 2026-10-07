@@ -86,6 +86,6 @@ start_server chat "${CHAT_PORT}" \
 wait_for_port "${EMBED_PORT}" embed
 wait_for_port "${CHAT_PORT}" chat
 
-echo "GraphRAG should use config/.env:"
+echo "GraphRAG reads these values from the repo-root .env (exported by make):"
 echo "  chat       ${CHAT_MODEL}  -> http://127.0.0.1:${CHAT_PORT}/v1"
 echo "  embeddings ${EMBED_MODEL} -> http://127.0.0.1:${EMBED_PORT}/v1"

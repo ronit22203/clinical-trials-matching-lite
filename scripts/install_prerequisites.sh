@@ -45,11 +45,11 @@ install_uv
 
 uv venv --python 3.11
 uv pip install -e .
-uv pip install graphrag pypdf pyarrow
+uv pip install graphrag surya-ocr python-dotenv pyarrow
 
-if [[ ! -f "${ROOT}/config/.env" ]]; then
-  cp "${ROOT}/data/.env.example" "${ROOT}/config/.env"
-  echo "Wrote config/.env from data/.env.example (local Ollama defaults)."
+if [[ ! -f "${ROOT}/.env" ]]; then
+  cp "${ROOT}/.env.example" "${ROOT}/.env"
+  echo "Wrote .env from .env.example (local Ollama defaults)."
   echo "On a RunPod GPU pod, run scripts/install_vllm.sh next to point GraphRAG at vLLM."
 fi
 

@@ -9,37 +9,47 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_ROOT = PROJECT_ROOT / "config"
-ENV_FILES = (PROJECT_ROOT / "data" / ".env", CONFIG_ROOT / ".env")
+ENV_FILE = PROJECT_ROOT / ".env"
+BACKENDS = ("ollama", "vllm")
 ENV_DEFAULTS = {
+    "LLM_BACKEND": "ollama",
     "GRAPHRAG_API_KEY": "ollama",
-    "GRAPHRAG_CHAT_MODEL": "medgemma-graphrag:4b",
-    "GRAPHRAG_API_BASE": "http://localhost:11434/v1",
-    "GRAPHRAG_EMBED_MODEL": "nomic-embed-text",
-    "GRAPHRAG_EMBED_API_BASE": "http://localhost:11434/v1",
 }
 
 
-def _parse_env_file(path: Path) -> dict[str, str]:
-    values: dict[str, str] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#") or "=" not in stripped:
-            continue
-        key, value = stripped.split("=", 1)
-        values[key.strip()] = value.strip().strip('"').strip("'")
-    return values
+def _load_repo_env() -> None:
+    """Load the repo-root .env without overriding variables already in the shell."""
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        if not ENV_FILE.is_file():
+            return
+        for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#") or "=" not in stripped:
+                continue
+            key, value = stripped.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+        return
+    load_dotenv(dotenv_path=ENV_FILE, override=False)
 
 
 def _graphrag_env() -> dict[str, str]:
-    """Shell environment wins, then config/.env, then data/.env, then local defaults."""
+    """Shell environment wins, then the repo-root .env, then local defaults.
+
+    ``LLM_BACKEND`` selects the ``ollama`` or ``vllm`` profile in settings.yaml.
+    GraphRAG only auto-loads a .env next to ``--root`` (``config/``), so this
+    environment is passed in explicitly.
+    """
+    _load_repo_env()
     env = os.environ.copy()
-    merged: dict[str, str] = {}
-    for path in ENV_FILES:
-        if path.is_file():
-            merged.update(_parse_env_file(path))
-    merged = {**ENV_DEFAULTS, **merged}
-    for key, value in merged.items():
+    for key, value in ENV_DEFAULTS.items():
         env.setdefault(key, value)
+    backend = env["LLM_BACKEND"]
+    if backend not in BACKENDS:
+        raise RuntimeError(f"LLM_BACKEND must be ollama or vllm, got {backend!r}")
+    env.setdefault("GRAPHRAG_COMPLETION_MODEL_ID", backend)
+    env.setdefault("GRAPHRAG_EMBEDDING_MODEL_ID", backend)
     return env
 
 

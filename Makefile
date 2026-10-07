@@ -1,44 +1,54 @@
 # Pipeline shortcuts. GraphRAG reads config/settings.yaml and stores artifacts under data/.
-# Local Ollama defaults apply until config/.env (written by scripts/install_vllm.sh) overrides them.
+# LLM_BACKEND=ollama|vllm selects which profile in settings.yaml is used.
+# The variables are exported before the GraphRAG CLI runs because
+# `graphrag --root config` only auto-loads config/.env.
 
 ROOT := $(abspath .)
 CONFIG := $(ROOT)/config
 
+LLM_BACKEND ?= ollama
 GRAPHRAG_API_KEY ?= ollama
-GRAPHRAG_CHAT_MODEL ?= medgemma-graphrag:4b
-GRAPHRAG_API_BASE ?= http://localhost:11434/v1
-GRAPHRAG_EMBED_MODEL ?= nomic-embed-text
-GRAPHRAG_EMBED_API_BASE ?= http://localhost:11434/v1
 
-ifneq (,$(wildcard $(ROOT)/data/.env))
-include $(ROOT)/data/.env
-endif
-ifneq (,$(wildcard $(CONFIG)/.env))
-include $(CONFIG)/.env
+ifneq ("$(wildcard $(ROOT)/.env)","")
+include $(ROOT)/.env
 endif
 
+ifeq ($(LLM_BACKEND),ollama)
+GRAPHRAG_COMPLETION_MODEL_ID ?= ollama
+GRAPHRAG_EMBEDDING_MODEL_ID ?= ollama
+else ifeq ($(LLM_BACKEND),vllm)
+GRAPHRAG_COMPLETION_MODEL_ID ?= vllm
+GRAPHRAG_EMBEDDING_MODEL_ID ?= vllm
+else
+$(error LLM_BACKEND must be ollama or vllm, got '$(LLM_BACKEND)')
+endif
+
+export LLM_BACKEND
 export GRAPHRAG_API_KEY
-export GRAPHRAG_CHAT_MODEL
-export GRAPHRAG_API_BASE
-export GRAPHRAG_EMBED_MODEL
-export GRAPHRAG_EMBED_API_BASE
+export GRAPHRAG_COMPLETION_MODEL_ID
+export GRAPHRAG_EMBEDDING_MODEL_ID
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install install-vllm serve-vllm parse index query query-global visualize
+.PHONY: help backend install install-vllm serve-vllm parse index query query-global visualize
 
 help: ## Show available targets
 	@echo "Usage: make <target>"
+	@echo "Backend: make index LLM_BACKEND=ollama|vllm  (default: $(LLM_BACKEND))"
 	@echo
 	@awk 'BEGIN {FS = ":.*##"} \
 	  /^##@/ {printf "\n%s\n", substr($$0, 5)} \
 	  /^[a-zA-Z0-9_-]+:.*##/ {printf "  %-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 ##@ Setup
-install: ## Install uv, GraphRAG, and PDF/parquet libraries
+backend: ## Print the active Ollama or vLLM profile
+	@echo "LLM_BACKEND=$(LLM_BACKEND)"
+	@echo "completion=$(GRAPHRAG_COMPLETION_MODEL_ID) embedding=$(GRAPHRAG_EMBEDDING_MODEL_ID)"
+
+install: ## Install uv, GraphRAG, Surya OCR, and parquet libraries
 	bash scripts/install_prerequisites.sh
 
-install-vllm: ## Install vLLM into .venv-vllm and write config/.env for RunPod
+install-vllm: ## Install vLLM into .venv-vllm and set LLM_BACKEND=vllm in .env
 	bash scripts/install_vllm.sh
 
 serve-vllm: ## Start vLLM chat (:8000) and embedding (:8001) servers
@@ -49,6 +59,7 @@ parse: ## Parse PDFs in data/raw_documents into data/input
 	uv run python scripts/parse_pdfs.py --input data/raw_documents --output data/input
 
 index: ## Build the knowledge graph
+	@echo "Indexing with LLM_BACKEND=$(LLM_BACKEND)"
 	uv run graphrag index --root $(CONFIG)
 
 query: ## Local search. Usage: make query Q="your question"
