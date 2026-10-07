@@ -1,0 +1,118 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+/lib/
+/lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-wheel-metadata/
+
+# Unit test / coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.hypothesis/
+coverage.xml
+*.cover
+*.py,cover
+nosetests.xml
+
+# Virtual environments
+.venv/
+.venv-vllm/
+venv/
+env/
+ENV/
+
+# Secrets and local env
+.env
+.env.*
+!.env.example
+config/.env
+data/.env
+*.pem
+*.key
+credentials.json
+secrets.json
+secrets/
+
+# GraphRAG generated artifacts
+data/cache/**
+!data/cache/.gitkeep
+data/logs/**
+!data/logs/.gitkeep
+data/output/**
+!data/output/.gitkeep
+data/update_output/
+data/lancedb/
+
+# Raw medical binaries dropped in before OCR
+data/raw_documents/**
+!data/raw_documents/.gitkeep
+
+# Model weights and hub caches
+models/
+hf_cache/
+huggingface/
+.huggingface/
+**/.cache/
+*.safetensors
+*.gguf
+*.onnx
+*.pt
+*.pth
+*.bin
+
+# Logs and process files
+*.log
+*.pid
+nohup.out
+
+# OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editors and notebooks
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.ipynb_checkpoints/
+
+# Temp
+tmp/
+*.tmp
+*.bak
